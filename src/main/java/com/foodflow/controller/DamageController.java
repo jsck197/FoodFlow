@@ -1,17 +1,24 @@
 package com.foodflow.controller;
 
+import com.foodflow.config.SecurityConfig;
 import com.foodflow.dao.DamageDAO;
+import com.foodflow.dao.ItemDAO;
 import com.foodflow.model.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 
 @WebServlet("/damage")
 public class DamageController extends HttpServlet {
 
-    private DamageDAO damageDAO = new DamageDAO();
+    private final DamageDAO damageDAO = new DamageDAO();
+    private final ItemDAO itemDAO = new ItemDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -23,7 +30,8 @@ public class DamageController extends HttpServlet {
             return;
         }
 
-        // For now: forward to JSP page
+        request.setAttribute("items", itemDAO.getAllItems());
+        request.setAttribute("damageEntries", damageDAO.getAllDamage());
         request.getRequestDispatcher("/damage/list.jsp").forward(request, response);
     }
 
@@ -38,27 +46,23 @@ public class DamageController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-
-        // Only Admin, Manager, or Clerk can log damage
-        if (!(user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.MANAGER || user.getRole() == User.Role.CLERK)) {
+        if (!SecurityConfig.canRecordOperationalData(user)) {
             response.sendRedirect("access-denied.jsp");
             return;
         }
 
-        // Get form parameters
         String itemId = request.getParameter("itemId");
         String quantityStr = request.getParameter("quantity");
         String reason = request.getParameter("reason");
 
         try {
             int quantity = Integer.parseInt(quantityStr);
-
-            // Call DAO to log damage
             damageDAO.recordDamage(itemId, quantity, reason, user.getUserId());
-
-            response.sendRedirect("damage"); // back to list
+            response.sendRedirect("damage");
         } catch (NumberFormatException e) {
             request.setAttribute("error", "Invalid quantity");
+            request.setAttribute("items", itemDAO.getAllItems());
+            request.setAttribute("damageEntries", damageDAO.getAllDamage());
             request.getRequestDispatcher("/damage/list.jsp").forward(request, response);
         }
     }

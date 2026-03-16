@@ -16,7 +16,7 @@
         <div>
             <p class="eyebrow">Admin Dashboard</p>
             <h1>System overview</h1>
-            <p>Use these quick links to exercise the backend routes and seeded workflows.</p>
+            <p>Admin handles user management, system maintenance, database operations, and activity logs.</p>
         </div>
         <div class="toolbar">
             <a class="button secondary" href="../auth?action=logout">Log out</a>
@@ -30,9 +30,9 @@
             <p class="muted">Role: <%= currentUser != null ? currentUser.getRole() : "ADMIN" %></p>
         </article>
         <article class="metric-card">
-            <p class="eyebrow">Low stock snapshot</p>
-            <h2>1 flagged item</h2>
-            <p class="muted">Sample data marks detergent as low stock.</p>
+            <p class="eyebrow">System scope</p>
+            <h2>3 users</h2>
+            <p class="muted">One user per diagram-defined role.</p>
         </article>
         <article class="metric-card">
             <p class="eyebrow">Last refreshed</p>
@@ -46,19 +46,21 @@
             <h2>Operations</h2>
             <ul class="plain-list">
                 <li><a href="../items">Open inventory</a></li>
-                <li><a href="../supplies">Record supply</a></li>
-                <li><a href="../usage">Record usage</a></li>
-                <li><a href="../damage">Record damage</a></li>
+                <li><a href="../supplies">Review stock intake</a></li>
+                <li><a href="../usage">Review issued items</a></li>
+                <li><a href="../damage">Review damage logs</a></li>
+                <li><a href="../requests">Review requests</a></li>
                 <li><a href="../reports">View reports</a></li>
                 <li><a href="users">Manage users</a></li>
+                <li><a href="../admin/system">System operations</a></li>
             </ul>
         </article>
         <article class="panel">
-            <h2>Backend test notes</h2>
+            <h2>Admin flow</h2>
             <ul class="plain-list">
-                <li>Forms post to the existing servlet endpoints.</li>
-                <li>Tables show seeded examples so pages stay useful while DAO wiring evolves.</li>
-                <li>The dashboard route now recognizes seeded manager and cook role names.</li>
+                <li>Manage users: add, update, and delete users.</li>
+                <li>Database operations: backup and restore placeholders are now routed through the backend.</li>
+                <li>System logs and maintenance actions are captured through admin system operations.</li>
             </ul>
         </article>
     </section>

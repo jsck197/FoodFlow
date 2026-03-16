@@ -33,4 +33,13 @@ public class Item {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public boolean isLowStock() {
+        return ItemStatus.LOW_STOCK.name().equalsIgnoreCase(status)
+                || ItemStatus.OUT_OF_STOCK.name().equalsIgnoreCase(status);
+    }
+
+    public boolean isInStock() {
+        return currentStock > 0;
+    }
 }

@@ -29,7 +29,7 @@ public class ReportController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-        if (!SecurityConfig.isAtLeastManager(user)) {
+        if (!SecurityConfig.canViewReports(user)) {
             response.sendRedirect("access-denied.jsp");
             return;
         }
@@ -37,6 +37,7 @@ public class ReportController extends HttpServlet {
         request.setAttribute("usageReport", reportDAO.getUsageReport());
         request.setAttribute("damageReport", reportDAO.getDamageReport());
         request.setAttribute("lowStockItems", reportDAO.getLowStockItems(10));
+        request.setAttribute("pendingRequests", reportDAO.getPendingRequests());
         request.getRequestDispatcher("/reports/list.jsp").forward(request, response);
     }
 }

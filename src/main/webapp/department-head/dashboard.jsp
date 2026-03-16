@@ -6,7 +6,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manager Dashboard</title>
+    <title>Department Head Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../assets/css/app.css">
 </head>
@@ -14,9 +14,9 @@
 <main class="shell">
     <section class="page-card page-head">
         <div>
-            <p class="eyebrow">Manager Dashboard</p>
-            <h1>Department operations</h1>
-            <p>Built for the seeded <code>DEPARTMENT_HEAD</code> role and any future <code>MANAGER</code> user.</p>
+            <p class="eyebrow">Department Head</p>
+            <h1>Requests and reports</h1>
+            <p>Approve store requests and review operational reports from the Store Keeper.</p>
         </div>
         <div class="toolbar">
             <a class="button secondary" href="../auth?action=logout">Log out</a>
@@ -26,13 +26,13 @@
     <section class="metrics">
         <article class="metric-card">
             <p class="eyebrow">Current user</p>
-            <h2><%= currentUser != null ? currentUser.getFullName() : "Manager session" %></h2>
+            <h2><%= currentUser != null ? currentUser.getFullName() : "Department Head" %></h2>
             <p class="muted">Role: <%= currentUser != null ? currentUser.getRole() : "DEPARTMENT_HEAD" %></p>
         </article>
         <article class="metric-card">
-            <p class="eyebrow">Pending request sample</p>
-            <h2>1</h2>
-            <p class="muted">Sample data includes one pending store request.</p>
+            <p class="eyebrow">Primary tools</p>
+            <h2>2</h2>
+            <p class="muted">Store request approvals and report review.</p>
         </article>
     </section>
 
@@ -40,19 +40,16 @@
         <article class="panel">
             <h2>Quick links</h2>
             <ul class="plain-list">
-                <li><a href="../items">Inventory items</a></li>
-                <li><a href="../supplies">Supply intake</a></li>
-                <li><a href="../usage">Usage log</a></li>
-                <li><a href="../damage">Damage log</a></li>
-                <li><a href="../reports">Reports</a></li>
+                <li><a href="../requests">Approve store requests</a></li>
+                <li><a href="../reports">View reports</a></li>
             </ul>
         </article>
         <article class="panel">
-            <h2>Seeded cues</h2>
+            <h2>Expected flow</h2>
             <ul class="plain-list">
-                <li>Weekly kitchen supplies request already approved.</li>
-                <li>Urgent lunch-service request is still pending.</li>
-                <li>Detergent is the sample low-stock item.</li>
+                <li>View pending requests from the Store Keeper.</li>
+                <li>Approve or reject requests.</li>
+                <li>Open reports and dashboard summaries.</li>
             </ul>
         </article>
     </section>

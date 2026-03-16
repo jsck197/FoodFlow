@@ -2,17 +2,22 @@ package com.foodflow.controller;
 
 import com.foodflow.dao.UserDAO;
 import com.foodflow.model.User;
+import com.foodflow.util.PasswordUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 import java.util.List;
 
 @WebServlet("/admin/users")
 public class UserController extends HttpServlet {
 
-    private UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO = new UserDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -25,15 +30,15 @@ public class UserController extends HttpServlet {
         }
 
         User currentUser = (User) session.getAttribute("user");
-
-        // Only Admin can access
         if (currentUser.getRole() != User.Role.ADMIN) {
             response.sendRedirect("../access-denied.jsp");
             return;
         }
 
         String action = request.getParameter("action");
-        if (action == null) action = "list";
+        if (action == null) {
+            action = "list";
+        }
 
         switch (action) {
             case "add":
@@ -41,8 +46,7 @@ public class UserController extends HttpServlet {
                 break;
             case "edit":
                 int editId = Integer.parseInt(request.getParameter("id"));
-                User userToEdit = userDAO.getUserById(editId);
-                request.setAttribute("user", userToEdit);
+                request.setAttribute("user", userDAO.getUserById(editId));
                 request.getRequestDispatcher("/admin/user-edit.jsp").forward(request, response);
                 break;
             case "delete":
@@ -50,10 +54,11 @@ public class UserController extends HttpServlet {
                 userDAO.deleteUser(deleteId);
                 response.sendRedirect("users");
                 break;
-            default: // list
+            default:
                 List<User> users = userDAO.getAllUsers();
                 request.setAttribute("users", users);
                 request.getRequestDispatcher("/admin/users.jsp").forward(request, response);
+                break;
         }
     }
 
@@ -68,47 +73,38 @@ public class UserController extends HttpServlet {
         }
 
         User currentUser = (User) session.getAttribute("user");
-
         if (currentUser.getRole() != User.Role.ADMIN) {
             response.sendRedirect("../access-denied.jsp");
             return;
         }
 
         String action = request.getParameter("action");
-
         if ("add".equals(action)) {
-            String fullName = request.getParameter("fullName");
-            String username = request.getParameter("username");
-            String password = request.getParameter("password"); // hash before saving
-            String roleStr = request.getParameter("role");
-
-            User.Role role = User.Role.valueOf(roleStr.toUpperCase());
-
             User newUser = new User();
-            newUser.setFullName(fullName);
-            newUser.setUsername(username);
-            newUser.setPassword(password); // hash later in DAO/Service
-            newUser.setRole(role);
-
+            newUser.setFullName(request.getParameter("fullName"));
+            newUser.setUsername(request.getParameter("fullName"));
+            newUser.setEmail(request.getParameter("email"));
+            newUser.setPassword(PasswordUtil.hashPassword(request.getParameter("password")));
+            newUser.setRole(User.Role.valueOf(request.getParameter("role").toUpperCase()));
             userDAO.addUser(newUser);
-
             response.sendRedirect("users");
-        } else if ("edit".equals(action)) {
-            int id = Integer.parseInt(request.getParameter("id"));
-            String fullName = request.getParameter("fullName");
-            String username = request.getParameter("username");
-            String roleStr = request.getParameter("role");
-
-            User.Role role = User.Role.valueOf(roleStr.toUpperCase());
-
-            User userToUpdate = userDAO.getUserById(id);
-            userToUpdate.setFullName(fullName);
-            userToUpdate.setUsername(username);
-            userToUpdate.setRole(role);
-
-            userDAO.updateUser(userToUpdate);
-
-            response.sendRedirect("users");
+            return;
         }
+
+        if ("edit".equals(action)) {
+            int id = Integer.parseInt(request.getParameter("id"));
+            User userToUpdate = userDAO.getUserById(id);
+            userToUpdate.setFullName(request.getParameter("fullName"));
+            userToUpdate.setUsername(request.getParameter("fullName"));
+            userToUpdate.setEmail(request.getParameter("email"));
+            userToUpdate.setRole(User.Role.valueOf(request.getParameter("role").toUpperCase()));
+            String password = request.getParameter("password");
+            userToUpdate.setPassword(password == null || password.isBlank() ? "" : PasswordUtil.hashPassword(password));
+            userDAO.updateUser(userToUpdate);
+            response.sendRedirect("users");
+            return;
+        }
+
+        response.sendRedirect("users");
     }
 }

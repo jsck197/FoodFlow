@@ -1,4 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.foodflow.model.Item" %>
+<%@ page import="com.foodflow.model.Supply" %>
+<%
+    List<Item> items = (List<Item>) request.getAttribute("items");
+    List<Supply> supplies = (List<Supply>) request.getAttribute("supplies");
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,9 +17,9 @@
 <main class="shell">
     <section class="page-card page-head">
         <div>
-            <p class="eyebrow">Supplies</p>
-            <h1>Record incoming stock</h1>
-            <p>Minimal frontend for the <code>/supplies</code> servlet.</p>
+            <p class="eyebrow">Supply Intake</p>
+            <h1>Receive stock</h1>
+            <p>Matches the Store Keeper flow for updating supplied food and utensils.</p>
         </div>
         <div class="nav-links">
             <a class="button secondary" href="../dashboard">Dashboard</a>
@@ -26,30 +33,41 @@
 
     <section class="content-grid">
         <article class="form-card">
-            <h2>Supply form</h2>
+            <h2>Record supply</h2>
             <form method="post" action="../supplies">
                 <label>
-                    Item ID
-                    <input type="number" name="itemId" placeholder="1" required>
+                    Item
+                    <select name="itemId" required>
+                        <% if (items != null) { for (Item item : items) { %>
+                        <option value="<%= item.getItemId() %>"><%= item.getName() %> (<%= item.getCurrentStock() %> <%= item.getUnitOfMeasure() %>)</option>
+                        <% }} %>
+                    </select>
                 </label>
-                <label>
-                    Quantity
-                    <input type="number" name="quantity" step="1" min="1" placeholder="50" required>
-                </label>
-                <button type="submit">Record supply</button>
+                <label>Quantity<input type="number" name="quantity" step="1" min="1" required></label>
+                <button type="submit">Add to inventory</button>
             </form>
         </article>
 
         <article class="table-card">
-            <h2>Seeded examples</h2>
+            <h2>Recent supply records</h2>
             <table>
                 <thead>
-                <tr><th>Date</th><th>Item</th><th>Qty</th><th>Notes</th></tr>
+                <tr><th>Date</th><th>Item</th><th>Qty</th><th>Supplier</th><th>Recorded By</th></tr>
                 </thead>
                 <tbody>
-                <tr><td>2026-03-01</td><td>Sugar</td><td>50</td><td>Initial stock from supplier</td></tr>
-                <tr><td>2026-03-02</td><td>Rice</td><td>50</td><td>Monthly rice supply</td></tr>
-                <tr><td>2026-03-02</td><td>Cooking Oil</td><td>20</td><td>Cooking oil refill</td></tr>
+                <% if (supplies != null && !supplies.isEmpty()) { %>
+                    <% for (Supply supply : supplies) { %>
+                    <tr>
+                        <td><%= supply.getDate() %></td>
+                        <td><%= supply.getItemName() %></td>
+                        <td><%= supply.getQuantity() %></td>
+                        <td><%= supply.getSupplier() %></td>
+                        <td><%= supply.getRecordedByName() %></td>
+                    </tr>
+                    <% } %>
+                <% } else { %>
+                    <tr><td colspan="5">No supply records yet.</td></tr>
+                <% } %>
                 </tbody>
             </table>
         </article>

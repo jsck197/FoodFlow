@@ -3,136 +3,65 @@ package com.foodflow.dao;
 import com.foodflow.config.DatabaseConfig;
 import com.foodflow.model.Damage;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DamageDAO {
 
-    private Connection conn;
-
-    public DamageDAO() {
-        conn = DatabaseConfig.getConnection();
-    }
-
-    // -------------------------------
-    // ADD NEW DAMAGE RECORD
-    // -------------------------------
     public boolean addDamage(Damage damage) {
-        String sql = "INSERT INTO damage (item_id, quantity, date, description, reported_by) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, damage.getItemId());
-            stmt.setDouble(2, damage.getQuantity());
-            stmt.setDate(3, Date.valueOf(damage.getDate()));
-            stmt.setString(4, damage.getDescription());
-            stmt.setString(5, damage.getReportedBy());
-            int rows = stmt.executeUpdate();
-            return rows > 0;
+        String insertSql = "INSERT INTO damage_log (item_id, quantity, damage_date, description, reported_by) VALUES (?, ?, ?, ?, ?)";
+        String stockSql = "UPDATE items SET stock = stock - ?, status = CASE WHEN stock - ? <= 0 THEN 'OUT_OF_STOCK' WHEN stock - ? <= 10 THEN 'LOW_STOCK' ELSE 'AVAILABLE' END WHERE item_id = ? AND stock >= ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement stockStmt = conn.prepareStatement(stockSql)) {
+            conn.setAutoCommit(false);
+            insertStmt.setInt(1, damage.getItemId());
+            insertStmt.setDouble(2, damage.getQuantity());
+            insertStmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.of(damage.getDate(), java.time.LocalTime.NOON)));
+            insertStmt.setString(4, damage.getDescription());
+            insertStmt.setInt(5, damage.getReportedByUserId());
+            insertStmt.executeUpdate();
+
+            stockStmt.setDouble(1, damage.getQuantity());
+            stockStmt.setDouble(2, damage.getQuantity());
+            stockStmt.setDouble(3, damage.getQuantity());
+            stockStmt.setInt(4, damage.getItemId());
+            stockStmt.setDouble(5, damage.getQuantity());
+            if (stockStmt.executeUpdate() == 0) {
+                conn.rollback();
+                return false;
+            }
+
+            conn.commit();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // -------------------------------
-    // GET DAMAGE BY ID
-    // -------------------------------
-    public Damage getDamageById(int damageId) {
-        String sql = "SELECT * FROM damage WHERE damage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, damageId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapResultSetToDamage(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // -------------------------------
-    // LIST ALL DAMAGE RECORDS
-    // -------------------------------
     public List<Damage> getAllDamage() {
-        List<Damage> damageList = new ArrayList<>();
-        String sql = "SELECT * FROM damage ORDER BY date DESC";
-        try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery(sql);
+        String sql = "SELECT d.*, i.name AS item_name, u.name AS reported_by_name " +
+                "FROM damage_log d JOIN items i ON d.item_id = i.item_id " +
+                "JOIN users u ON d.reported_by = u.user_id ORDER BY d.damage_date DESC";
+        List<Damage> damages = new ArrayList<>();
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
-                damageList.add(mapResultSetToDamage(rs));
+                damages.add(mapResultSetToDamage(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return damageList;
-    }
-
-    // -------------------------------
-    // LIST DAMAGE BY ITEM
-    // -------------------------------
-    public List<Damage> getDamageByItem(int itemId) {
-        List<Damage> damageList = new ArrayList<>();
-        String sql = "SELECT * FROM damage WHERE item_id = ? ORDER BY date DESC";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, itemId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                damageList.add(mapResultSetToDamage(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return damageList;
-    }
-
-    // -------------------------------
-    // UPDATE DAMAGE RECORD
-    // -------------------------------
-    public boolean updateDamage(Damage damage) {
-        String sql = "UPDATE damage SET item_id = ?, quantity = ?, date = ?, description = ?, reported_by = ? WHERE damage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, damage.getItemId());
-            stmt.setDouble(2, damage.getQuantity());
-            stmt.setDate(3, Date.valueOf(damage.getDate()));
-            stmt.setString(4, damage.getDescription());
-            stmt.setString(5, damage.getReportedBy());
-            stmt.setInt(6, damage.getDamageId());
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // DELETE DAMAGE RECORD
-    // -------------------------------
-    public boolean deleteDamage(int damageId) {
-        String sql = "DELETE FROM damage WHERE damage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, damageId);
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // HELPER: MAP RESULTSET TO DAMAGE OBJECT
-    // -------------------------------
-    private Damage mapResultSetToDamage(ResultSet rs) throws SQLException {
-        Damage damage = new Damage();
-        damage.setDamageId(rs.getInt("damage_id"));
-        damage.setItemId(rs.getInt("item_id"));
-        damage.setQuantity(rs.getDouble("quantity"));
-        damage.setDate(rs.getDate("date").toLocalDate());
-        damage.setDescription(rs.getString("description"));
-        damage.setReportedBy(rs.getString("reported_by"));
-        return damage;
+        return damages;
     }
 
     public boolean recordDamage(String itemId, int quantity, String reason, int userId) {
@@ -148,8 +77,23 @@ public class DamageDAO {
         damage.setItemId(itemId);
         damage.setQuantity(quantity);
         damage.setDescription(reason);
-        damage.setReportedBy(String.valueOf(userId));
+        damage.setReportedByUserId(userId);
         return addDamage(damage);
     }
 
+    private Damage mapResultSetToDamage(ResultSet rs) throws SQLException {
+        Damage damage = new Damage();
+        damage.setDamageId(rs.getInt("damage_id"));
+        damage.setItemId(rs.getInt("item_id"));
+        damage.setItemName(rs.getString("item_name"));
+        damage.setQuantity(rs.getDouble("quantity"));
+        Timestamp timestamp = rs.getTimestamp("damage_date");
+        if (timestamp != null) {
+            damage.setDate(timestamp.toLocalDateTime().toLocalDate());
+        }
+        damage.setDescription(rs.getString("description"));
+        damage.setReportedByUserId(rs.getInt("reported_by"));
+        damage.setReportedBy(rs.getString("reported_by_name"));
+        return damage;
+    }
 }

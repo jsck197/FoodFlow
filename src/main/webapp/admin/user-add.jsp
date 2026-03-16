@@ -11,30 +11,21 @@
     <section class="page-card">
         <p class="eyebrow">Admin</p>
         <h1>Add user</h1>
-        <p class="muted">Minimal form wired to the existing admin servlet.</p>
+        <p class="muted">Create a new Admin, Department Head, or Store Keeper account.</p>
     </section>
 
     <section class="form-card">
         <form method="post" action="users">
             <input type="hidden" name="action" value="add">
-            <label>
-                Full name
-                <input type="text" name="fullName" required>
-            </label>
-            <label>
-                Username
-                <input type="text" name="username" required>
-            </label>
-            <label>
-                Password
-                <input type="password" name="password" required>
-            </label>
+            <label>Full name<input type="text" name="fullName" required></label>
+            <label>Email<input type="email" name="email" required></label>
+            <label>Password<input type="password" name="password" required></label>
             <label>
                 Role
                 <select name="role">
                     <option value="ADMIN">Admin</option>
                     <option value="DEPARTMENT_HEAD">Department Head</option>
-                    <option value="COOK">Cook</option>
+                    <option value="STORE_KEEPER">Store Keeper</option>
                 </select>
             </label>
             <button type="submit">Create user</button>

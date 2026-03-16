@@ -1,4 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.foodflow.model.Item" %>
+<%
+    List<Item> items = (List<Item>) request.getAttribute("items");
+    Boolean canManageInventory = (Boolean) request.getAttribute("canManageInventory");
+    String query = (String) request.getAttribute("query");
+%>
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,66 +18,70 @@
     <section class="page-card page-head">
         <div>
             <p class="eyebrow">Inventory</p>
-            <h1>Items list</h1>
-            <p>Placeholder inventory view for the <code>/items</code> route.</p>
+            <h1>Item list and store status</h1>
+            <p>Supports the Store Keeper flow for viewing items, searching inventory, and recording current stock status.</p>
         </div>
         <div class="nav-links">
             <a class="button secondary" href="../dashboard">Dashboard</a>
-            <a class="button secondary" href="../reports">Reports</a>
+            <a class="button secondary" href="../requests">Store requests</a>
         </div>
+    </section>
+
+    <section class="form-card">
+        <form method="get" action="../items">
+            <label>
+                Search items
+                <input type="text" name="q" value="<%= query == null ? "" : query %>" placeholder="Search by item or category">
+            </label>
+            <button type="submit">Search</button>
+        </form>
     </section>
 
     <section class="content-grid">
         <article class="table-card">
-            <h2>Seeded inventory snapshot</h2>
+            <h2>Current inventory</h2>
             <table>
                 <thead>
                 <tr>
                     <th>Item</th>
                     <th>Category</th>
                     <th>Stock</th>
-                    <th>Reorder</th>
+                    <th>Unit</th>
                     <th>Status</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr><td>Sugar</td><td>Non-perishable</td><td>100 kg</td><td>20 kg</td><td class="status-ok">Available</td></tr>
-                <tr><td>Kales</td><td>Perishable</td><td>50 kg</td><td>5 kg</td><td class="status-ok">Available</td></tr>
-                <tr><td>Rice</td><td>Non-perishable</td><td>80 kg</td><td>25 kg</td><td class="status-ok">Available</td></tr>
-                <tr><td>Detergent</td><td>Cleaning supplies</td><td>15 liters</td><td>5 liters</td><td class="status-low">Low stock</td></tr>
-                <tr><td>Spoons</td><td>Utensils</td><td>250 pcs</td><td>100 pcs</td><td class="status-ok">Available</td></tr>
+                <% if (items != null && !items.isEmpty()) { %>
+                    <% for (Item item : items) { %>
+                    <tr>
+                        <td><%= item.getName() %></td>
+                        <td><%= item.getCategory() %></td>
+                        <td><%= item.getCurrentStock() %></td>
+                        <td><%= item.getUnitOfMeasure() %></td>
+                        <td class="<%= item.isLowStock() ? "status-low" : "status-ok" %>"><%= item.getStatus() %></td>
+                    </tr>
+                    <% } %>
+                <% } else { %>
+                    <tr><td colspan="5">No items found.</td></tr>
+                <% } %>
                 </tbody>
             </table>
         </article>
 
+        <% if (Boolean.TRUE.equals(canManageInventory)) { %>
         <article class="form-card">
-            <h2>Add item placeholder</h2>
-            <% if (request.getAttribute("error") != null) { %>
-            <section class="notice error"><%= request.getAttribute("error") %></section>
-            <% } %>
+            <h2>Add item</h2>
             <form method="post" action="../items">
                 <input type="hidden" name="action" value="add">
-                <label>
-                    Item name
-                    <input type="text" name="itemName" placeholder="Beans">
-                </label>
-                <label>
-                    Category
-                    <select name="categoryId">
-                        <option value="1">Perishable</option>
-                        <option value="2">Non-perishable</option>
-                        <option value="3">Utensils</option>
-                        <option value="4">Cleaning supplies</option>
-                    </select>
-                </label>
-                <label>
-                    Opening stock
-                    <input type="number" step="0.01" name="quantity" placeholder="25">
-                </label>
-                <button type="submit">Submit placeholder add</button>
+                <label>Item name<input type="text" name="itemName" required></label>
+                <label>Category<input type="text" name="category" placeholder="Food, Utensils, Cleaning" required></label>
+                <label>Opening stock<input type="number" name="quantity" step="0.01" required></label>
+                <label>Unit of measure<input type="text" name="unitOfMeasure" placeholder="kg, pcs, liters" required></label>
+                <label>Description<textarea name="description" placeholder="Optional item description"></textarea></label>
+                <button type="submit">Add item</button>
             </form>
-            <p class="muted small">The current servlet only checks permissions and redirects. This form is here so the route can be exercised from the browser.</p>
         </article>
+        <% } %>
     </section>
 </main>
 </body>

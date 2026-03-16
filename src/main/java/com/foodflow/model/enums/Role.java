@@ -2,14 +2,12 @@ package com.foodflow.model.enums;
 
 public enum Role {
     ADMIN,
-    MANAGER,
-    CLERK,
     DEPARTMENT_HEAD,
-    COOK;
+    STORE_KEEPER;
 
     public static Role from(String value) {
         if (value == null || value.isBlank()) {
-            return CLERK;
+            return STORE_KEEPER;
         }
         return Role.valueOf(value.trim().toUpperCase());
     }

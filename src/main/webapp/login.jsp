@@ -11,7 +11,7 @@
     <section class="page-card">
         <p class="eyebrow">FoodFlow</p>
         <h1>Sign in for backend testing</h1>
-        <p class="muted">This is a lightweight login shell for the existing <code>/auth</code> servlet.</p>
+        <p class="muted">This login now targets the corrected 3-role system from your diagrams.</p>
     </section>
 
     <% if (request.getAttribute("error") != null) { %>
@@ -38,12 +38,11 @@
     <section class="page-card small">
         <strong>Seeded usernames</strong>
         <ul class="plain-list">
-            <li><code>System Admin</code></li>
-            <li><code>Department Head</code></li>
-            <li><code>Head Cook</code></li>
-            <li><code>Assistant Cook</code></li>
+            <li><code>Admin User</code> / <code>admin123</code></li>
+            <li><code>Department Head</code> / <code>head123</code></li>
+            <li><code>Store Keeper</code> / <code>keeper123</code></li>
         </ul>
-        <p class="muted">Passwords depend on the hash already stored in <code>database/sample_data.sql</code>.</p>
+        <p class="muted">The sample data now uses explicit SHA-256 hashed test passwords for those three accounts.</p>
         <p><a href="index.html">Back to landing page</a></p>
     </section>
 </main>

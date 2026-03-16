@@ -1,17 +1,24 @@
 package com.foodflow.controller;
 
+import com.foodflow.config.SecurityConfig;
+import com.foodflow.dao.ItemDAO;
 import com.foodflow.dao.SupplyDAO;
 import com.foodflow.model.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 
 @WebServlet("/supplies")
 public class SupplyController extends HttpServlet {
 
-    private SupplyDAO supplyDAO = new SupplyDAO();
+    private final SupplyDAO supplyDAO = new SupplyDAO();
+    private final ItemDAO itemDAO = new ItemDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -23,9 +30,8 @@ public class SupplyController extends HttpServlet {
             return;
         }
 
-        User user = (User) session.getAttribute("user");
-
-        // For now: just forward to JSP page
+        request.setAttribute("items", itemDAO.getAllItems());
+        request.setAttribute("supplies", supplyDAO.getAllSupplies());
         request.getRequestDispatcher("/supplies/list.jsp").forward(request, response);
     }
 
@@ -40,29 +46,22 @@ public class SupplyController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-
-        // Only Admin or Manager can add new supply
-        if (!(user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.MANAGER)) {
+        if (!SecurityConfig.canManageInventory(user)) {
             response.sendRedirect("access-denied.jsp");
             return;
         }
 
-        // Get form parameters
         String itemId = request.getParameter("itemId");
         String quantityStr = request.getParameter("quantity");
 
         try {
             int quantity = Integer.parseInt(quantityStr);
-
-            // Call DAO to add supply
             supplyDAO.addSupply(itemId, quantity, user.getUserId());
-
-            // Optional: log activity
-            // supplyDAO.logActivity(user.getUserId(), itemId, quantity);
-
-            response.sendRedirect("supplies"); // redirect back to list page
+            response.sendRedirect("supplies");
         } catch (NumberFormatException e) {
             request.setAttribute("error", "Invalid quantity");
+            request.setAttribute("items", itemDAO.getAllItems());
+            request.setAttribute("supplies", supplyDAO.getAllSupplies());
             request.getRequestDispatcher("/supplies/list.jsp").forward(request, response);
         }
     }

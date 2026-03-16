@@ -3,62 +3,60 @@ package com.foodflow.dao;
 import com.foodflow.config.DatabaseConfig;
 import com.foodflow.model.Usage;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UsageDAO {
 
-    private Connection conn;
-
-    public UsageDAO() {
-        conn = DatabaseConfig.getConnection();
-    }
-
-    // -------------------------------
-    // ADD NEW USAGE
-    // -------------------------------
     public boolean addUsage(Usage usage) {
-        String sql = "INSERT INTO usage (item_id, quantity, item_user_name, date, status) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, usage.getItemId());
-            stmt.setDouble(2, usage.getQuantity());
-            stmt.setString(3, usage.getItemUserName());
-            stmt.setDate(4, Date.valueOf(usage.getDate()));
-            stmt.setString(5, usage.getStatus().name()); // Enum TA/RETURNED
-            int rows = stmt.executeUpdate();
-            return rows > 0;
+        String insertSql = "INSERT INTO borrow_transactions (item_id, quantity_borrowed, quantity_returned, borrow_date, return_date, status, recorded_by) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String stockSql = "UPDATE items SET stock = stock - ?, status = CASE WHEN stock - ? <= 0 THEN 'OUT_OF_STOCK' WHEN stock - ? <= 10 THEN 'LOW_STOCK' ELSE 'AVAILABLE' END WHERE item_id = ? AND stock >= ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement stockStmt = conn.prepareStatement(stockSql)) {
+            conn.setAutoCommit(false);
+            insertStmt.setInt(1, usage.getItemId());
+            insertStmt.setDouble(2, usage.getQuantity());
+            insertStmt.setDouble(3, usage.getQuantityReturned());
+            insertStmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.of(usage.getDate(), java.time.LocalTime.NOON)));
+            insertStmt.setTimestamp(5, null);
+            insertStmt.setString(6, usage.getStatus().name());
+            insertStmt.setInt(7, usage.getRecordedBy());
+            insertStmt.executeUpdate();
+
+            stockStmt.setDouble(1, usage.getQuantity());
+            stockStmt.setDouble(2, usage.getQuantity());
+            stockStmt.setDouble(3, usage.getQuantity());
+            stockStmt.setInt(4, usage.getItemId());
+            stockStmt.setDouble(5, usage.getQuantity());
+            if (stockStmt.executeUpdate() == 0) {
+                conn.rollback();
+                return false;
+            }
+
+            conn.commit();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // -------------------------------
-    // GET USAGE BY ID
-    // -------------------------------
-    public Usage getUsageById(int usageId) {
-        String sql = "SELECT * FROM usage WHERE usage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, usageId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapResultSetToUsage(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // -------------------------------
-    // LIST ALL USAGE
-    // -------------------------------
     public List<Usage> getAllUsage() {
+        String sql = "SELECT b.*, i.name AS item_name, u.name AS recorded_by_name " +
+                "FROM borrow_transactions b JOIN items i ON b.item_id = i.item_id " +
+                "JOIN users u ON b.recorded_by = u.user_id ORDER BY b.borrow_date DESC";
         List<Usage> usageList = new ArrayList<>();
-        String sql = "SELECT * FROM usage ORDER BY date DESC";
-        try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery(sql);
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 usageList.add(mapResultSetToUsage(rs));
             }
@@ -67,74 +65,6 @@ public class UsageDAO {
         }
         return usageList;
     }
-
-    // -------------------------------
-    // LIST USAGE BY ITEM
-    // -------------------------------
-    public List<Usage> getUsageByItem(int itemId) {
-        List<Usage> usageList = new ArrayList<>();
-        String sql = "SELECT * FROM usage WHERE item_id = ? ORDER BY date DESC";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, itemId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                usageList.add(mapResultSetToUsage(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return usageList;
-    }
-
-    // -------------------------------
-    // UPDATE USAGE
-    // -------------------------------
-    public boolean updateUsage(Usage usage) {
-        String sql = "UPDATE usage SET item_id = ?, quantity = ?, item_user_name = ?, date = ?, status = ? WHERE usage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, usage.getItemId());
-            stmt.setDouble(2, usage.getQuantity());
-            stmt.setString(3, usage.getItemUserName());
-            stmt.setDate(4, Date.valueOf(usage.getDate()));
-            stmt.setString(5, usage.getStatus().name());
-            stmt.setInt(6, usage.getUsageId());
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // DELETE USAGE
-    // -------------------------------
-    public boolean deleteUsage(int usageId) {
-        String sql = "DELETE FROM usage WHERE usage_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, usageId);
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // HELPER: MAP RESULTSET TO USAGE OBJECT
-    // -------------------------------
-    private Usage mapResultSetToUsage(ResultSet rs) throws SQLException {
-        Usage usage = new Usage();
-        usage.setUsageId(rs.getInt("usage_id"));
-        usage.setItemId(rs.getInt("item_id"));
-        usage.setQuantity(rs.getDouble("quantity"));
-        usage.setItemUserName(rs.getString("item_user_name"));
-        usage.setDate(rs.getDate("date").toLocalDate());
-        usage.setStatus(Usage.Status.valueOf(rs.getString("status")));
-        return usage;
-    }
-
 
     public boolean recordUsage(String itemId, int quantity, int userId) {
         try {
@@ -148,9 +78,25 @@ public class UsageDAO {
         Usage usage = new Usage();
         usage.setItemId(itemId);
         usage.setQuantity(quantity);
-        usage.setItemUserName("USER_" + userId);
-        usage.setStatus(Usage.Status.TAKEN);
+        usage.setRecordedBy(userId);
+        usage.setStatus(Usage.Status.ISSUED);
         return addUsage(usage);
     }
 
+    private Usage mapResultSetToUsage(ResultSet rs) throws SQLException {
+        Usage usage = new Usage();
+        usage.setUsageId(rs.getInt("borrow_id"));
+        usage.setItemId(rs.getInt("item_id"));
+        usage.setItemName(rs.getString("item_name"));
+        usage.setQuantity(rs.getDouble("quantity_borrowed"));
+        usage.setQuantityReturned(rs.getDouble("quantity_returned"));
+        usage.setRecordedBy(rs.getInt("recorded_by"));
+        usage.setItemUserName(rs.getString("recorded_by_name"));
+        Timestamp timestamp = rs.getTimestamp("borrow_date");
+        if (timestamp != null) {
+            usage.setDate(timestamp.toLocalDateTime().toLocalDate());
+        }
+        usage.setStatus(Usage.Status.valueOf(rs.getString("status")));
+        return usage;
+    }
 }

@@ -15,27 +15,22 @@
     <section class="page-card">
         <p class="eyebrow">Admin</p>
         <h1>Edit user</h1>
-        <p class="muted">Updates flow back through <code>/admin/users</code>.</p>
+        <p class="muted">Update user identity, role, or password.</p>
     </section>
 
     <section class="form-card">
         <form method="post" action="users">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="<%= editUser != null ? editUser.getUserId() : 0 %>">
-            <label>
-                Full name
-                <input type="text" name="fullName" value="<%= editUser != null ? editUser.getFullName() : "" %>" required>
-            </label>
-            <label>
-                Username
-                <input type="text" name="username" value="<%= editUser != null ? editUser.getUsername() : "" %>" required>
-            </label>
+            <label>Full name<input type="text" name="fullName" value="<%= editUser != null ? editUser.getFullName() : "" %>" required></label>
+            <label>Email<input type="email" name="email" value="<%= editUser != null ? editUser.getEmail() : "" %>" required></label>
+            <label>Password<input type="password" name="password" placeholder="Leave blank to keep current password"></label>
             <label>
                 Role
                 <select name="role">
                     <option value="ADMIN" <%= editUser != null && editUser.getRole() == User.Role.ADMIN ? "selected" : "" %>>Admin</option>
-                    <option value="DEPARTMENT_HEAD" <%= editUser != null && (editUser.getRole() == User.Role.DEPARTMENT_HEAD || editUser.getRole() == User.Role.MANAGER) ? "selected" : "" %>>Department Head</option>
-                    <option value="COOK" <%= editUser != null && (editUser.getRole() == User.Role.COOK || editUser.getRole() == User.Role.CLERK) ? "selected" : "" %>>Cook</option>
+                    <option value="DEPARTMENT_HEAD" <%= editUser != null && editUser.getRole() == User.Role.DEPARTMENT_HEAD ? "selected" : "" %>>Department Head</option>
+                    <option value="STORE_KEEPER" <%= editUser != null && editUser.getRole() == User.Role.STORE_KEEPER ? "selected" : "" %>>Store Keeper</option>
                 </select>
             </label>
             <button type="submit">Save changes</button>

@@ -17,7 +17,7 @@
         <div>
             <p class="eyebrow">Admin</p>
             <h1>User management</h1>
-            <p>List view for the <code>/admin/users</code> route.</p>
+            <p>Admin-only add, update, and delete flow for the 3-role system.</p>
         </div>
         <div class="nav-links">
             <a class="button primary" href="users?action=add">Add user</a>
@@ -26,7 +26,6 @@
     </section>
 
     <section class="table-card">
-        <h2>Users</h2>
         <table>
             <thead>
             <tr><th>ID</th><th>Name</th><th>Role</th><th>Email</th><th>Actions</th></tr>
@@ -47,9 +46,7 @@
                 </tr>
                 <% } %>
             <% } else { %>
-                <tr><td>1</td><td>System Admin</td><td>ADMIN</td><td>admin@foodflow.com</td><td>Seeded example</td></tr>
-                <tr><td>2</td><td>Department Head</td><td>DEPARTMENT_HEAD</td><td>head@foodflow.com</td><td>Seeded example</td></tr>
-                <tr><td>3</td><td>Head Cook</td><td>COOK</td><td>cook1@foodflow.com</td><td>Seeded example</td></tr>
+                <tr><td colspan="5">No users found.</td></tr>
             <% } %>
             </tbody>
         </table>

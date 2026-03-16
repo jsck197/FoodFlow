@@ -1,17 +1,24 @@
 package com.foodflow.controller;
 
+import com.foodflow.config.SecurityConfig;
+import com.foodflow.dao.ItemDAO;
 import com.foodflow.dao.UsageDAO;
 import com.foodflow.model.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
 import java.io.IOException;
 
 @WebServlet("/usage")
 public class UsageController extends HttpServlet {
 
-    private UsageDAO usageDAO = new UsageDAO();
+    private final UsageDAO usageDAO = new UsageDAO();
+    private final ItemDAO itemDAO = new ItemDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -23,7 +30,8 @@ public class UsageController extends HttpServlet {
             return;
         }
 
-        // For now: just forward to JSP page
+        request.setAttribute("items", itemDAO.getAllItems());
+        request.setAttribute("usageEntries", usageDAO.getAllUsage());
         request.getRequestDispatcher("/usage/list.jsp").forward(request, response);
     }
 
@@ -38,29 +46,22 @@ public class UsageController extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
-
-        // Only Admin, Manager, or Clerk can record usage
-        if (!(user.getRole() == User.Role.ADMIN || user.getRole() == User.Role.MANAGER || user.getRole() == User.Role.CLERK)) {
+        if (!SecurityConfig.canRecordOperationalData(user)) {
             response.sendRedirect("access-denied.jsp");
             return;
         }
 
-        // Get form parameters
         String itemId = request.getParameter("itemId");
         String quantityStr = request.getParameter("quantity");
 
         try {
             int quantity = Integer.parseInt(quantityStr);
-
-            // Call DAO to record usage
             usageDAO.recordUsage(itemId, quantity, user.getUserId());
-
-            // Optional: log activity
-            // usageDAO.logActivity(user.getUserId(), itemId, quantity);
-
-            response.sendRedirect("usage"); // redirect back to list page
+            response.sendRedirect("usage");
         } catch (NumberFormatException e) {
             request.setAttribute("error", "Invalid quantity");
+            request.setAttribute("items", itemDAO.getAllItems());
+            request.setAttribute("usageEntries", usageDAO.getAllUsage());
             request.getRequestDispatcher("/usage/list.jsp").forward(request, response);
         }
     }

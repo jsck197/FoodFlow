@@ -3,62 +3,54 @@ package com.foodflow.dao;
 import com.foodflow.config.DatabaseConfig;
 import com.foodflow.model.Supply;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SupplyDAO {
 
-    private Connection conn;
-
-    public SupplyDAO() {
-        conn = DatabaseConfig.getConnection();
-    }
-
-    // -------------------------------
-    // ADD NEW SUPPLY
-    // -------------------------------
     public boolean addSupply(Supply supply) {
-        String sql = "INSERT INTO supply (item_id, quantity, supplier, date, time) VALUES (?, ?, ?, ?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, supply.getItemId());
-            stmt.setDouble(2, supply.getQuantity());
-            stmt.setString(3, supply.getSupplier());
-            stmt.setDate(4, Date.valueOf(supply.getDate()));
-            stmt.setTime(5, Time.valueOf(supply.getTime()));
-            int rows = stmt.executeUpdate();
-            return rows > 0;
+        String insertSql = "INSERT INTO supply (item_id, quantity, supplier, supply_date, recorded_by) VALUES (?, ?, ?, ?, ?)";
+        String stockSql = "UPDATE items SET stock = stock + ?, status = CASE WHEN stock + ? <= 0 THEN 'OUT_OF_STOCK' WHEN stock + ? <= 10 THEN 'LOW_STOCK' ELSE 'AVAILABLE' END WHERE item_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement insertStmt = conn.prepareStatement(insertSql);
+             PreparedStatement stockStmt = conn.prepareStatement(stockSql)) {
+            conn.setAutoCommit(false);
+            insertStmt.setInt(1, supply.getItemId());
+            insertStmt.setDouble(2, supply.getQuantity());
+            insertStmt.setString(3, supply.getSupplier());
+            insertStmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.of(supply.getDate(), supply.getTime())));
+            insertStmt.setInt(5, supply.getRecordedBy());
+            insertStmt.executeUpdate();
+
+            stockStmt.setDouble(1, supply.getQuantity());
+            stockStmt.setDouble(2, supply.getQuantity());
+            stockStmt.setDouble(3, supply.getQuantity());
+            stockStmt.setInt(4, supply.getItemId());
+            stockStmt.executeUpdate();
+
+            conn.commit();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // -------------------------------
-    // GET SUPPLY BY ID
-    // -------------------------------
-    public Supply getSupplyById(int supplyId) {
-        String sql = "SELECT * FROM supply WHERE supply_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, supplyId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return mapResultSetToSupply(rs);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // -------------------------------
-    // LIST ALL SUPPLIES
-    // -------------------------------
     public List<Supply> getAllSupplies() {
+        String sql = "SELECT s.*, i.name AS item_name, u.name AS recorded_by_name " +
+                "FROM supply s JOIN items i ON s.item_id = i.item_id " +
+                "JOIN users u ON s.recorded_by = u.user_id ORDER BY s.supply_date DESC";
         List<Supply> supplies = new ArrayList<>();
-        String sql = "SELECT * FROM supply ORDER BY date DESC, time DESC";
-        try (Statement stmt = conn.createStatement()) {
-            ResultSet rs = stmt.executeQuery(sql);
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 supplies.add(mapResultSetToSupply(rs));
             }
@@ -66,73 +58,6 @@ public class SupplyDAO {
             e.printStackTrace();
         }
         return supplies;
-    }
-
-    // -------------------------------
-    // LIST SUPPLIES BY ITEM
-    // -------------------------------
-    public List<Supply> getSuppliesByItem(int itemId) {
-        List<Supply> supplies = new ArrayList<>();
-        String sql = "SELECT * FROM supply WHERE item_id = ? ORDER BY date DESC";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, itemId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                supplies.add(mapResultSetToSupply(rs));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return supplies;
-    }
-
-    // -------------------------------
-    // UPDATE SUPPLY
-    // -------------------------------
-    public boolean updateSupply(Supply supply) {
-        String sql = "UPDATE supply SET item_id = ?, quantity = ?, supplier = ?, date = ?, time = ? WHERE supply_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, supply.getItemId());
-            stmt.setDouble(2, supply.getQuantity());
-            stmt.setString(3, supply.getSupplier());
-            stmt.setDate(4, Date.valueOf(supply.getDate()));
-            stmt.setTime(5, Time.valueOf(supply.getTime()));
-            stmt.setInt(6, supply.getSupplyId());
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // DELETE SUPPLY
-    // -------------------------------
-    public boolean deleteSupply(int supplyId) {
-        String sql = "DELETE FROM supply WHERE supply_id = ?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, supplyId);
-            int rows = stmt.executeUpdate();
-            return rows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    // -------------------------------
-    // HELPER: MAP RESULTSET TO SUPPLY OBJECT
-    // -------------------------------
-    private Supply mapResultSetToSupply(ResultSet rs) throws SQLException {
-        Supply supply = new Supply();
-        supply.setSupplyId(rs.getInt("supply_id"));
-        supply.setItemId(rs.getInt("item_id"));
-        supply.setQuantity(rs.getDouble("quantity"));
-        supply.setSupplier(rs.getString("supplier"));
-        supply.setDate(rs.getDate("date").toLocalDate());
-        supply.setTime(rs.getTime("time").toLocalTime());
-        return supply;
     }
 
     public boolean addSupply(String itemId, int quantity, int userId) {
@@ -140,11 +65,28 @@ public class SupplyDAO {
             Supply supply = new Supply();
             supply.setItemId(Integer.parseInt(itemId));
             supply.setQuantity(quantity);
-            supply.setSupplier("USER_" + userId);
+            supply.setSupplier("General Supplier");
+            supply.setRecordedBy(userId);
             return addSupply(supply);
         } catch (NumberFormatException ex) {
             return false;
         }
     }
 
+    private Supply mapResultSetToSupply(ResultSet rs) throws SQLException {
+        Supply supply = new Supply();
+        supply.setSupplyId(rs.getInt("supply_id"));
+        supply.setItemId(rs.getInt("item_id"));
+        supply.setItemName(rs.getString("item_name"));
+        supply.setQuantity(rs.getDouble("quantity"));
+        supply.setSupplier(rs.getString("supplier"));
+        supply.setRecordedBy(rs.getInt("recorded_by"));
+        supply.setRecordedByName(rs.getString("recorded_by_name"));
+        Timestamp timestamp = rs.getTimestamp("supply_date");
+        if (timestamp != null) {
+            supply.setDate(timestamp.toLocalDateTime().toLocalDate());
+            supply.setTime(timestamp.toLocalDateTime().toLocalTime());
+        }
+        return supply;
+    }
 }

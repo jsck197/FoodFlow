@@ -1,8 +1,15 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.foodflow.model.Item" %>
+<%@ page import="com.foodflow.model.Usage" %>
+<%
+    List<Item> items = (List<Item>) request.getAttribute("items");
+    List<Usage> usageEntries = (List<Usage>) request.getAttribute("usageEntries");
+%>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Usage Log</title>
+    <title>Issued Items</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../assets/css/app.css">
 </head>
@@ -10,9 +17,9 @@
 <main class="shell">
     <section class="page-card page-head">
         <div>
-            <p class="eyebrow">Usage</p>
-            <h1>Record stock consumption</h1>
-            <p>Simple POST form for the current <code>/usage</code> endpoint.</p>
+            <p class="eyebrow">Issued Items</p>
+            <h1>Record items used</h1>
+            <p>Implements the Store Keeper flow for issuing stock and deducting it from inventory.</p>
         </div>
         <div class="nav-links">
             <a class="button secondary" href="../dashboard">Dashboard</a>
@@ -26,30 +33,41 @@
 
     <section class="content-grid">
         <article class="form-card">
-            <h2>Usage form</h2>
+            <h2>Issue stock</h2>
             <form method="post" action="../usage">
                 <label>
-                    Item ID
-                    <input type="number" name="itemId" placeholder="5" required>
+                    Item
+                    <select name="itemId" required>
+                        <% if (items != null) { for (Item item : items) { %>
+                        <option value="<%= item.getItemId() %>"><%= item.getName() %> (<%= item.getCurrentStock() %> <%= item.getUnitOfMeasure() %>)</option>
+                        <% }} %>
+                    </select>
                 </label>
-                <label>
-                    Quantity used
-                    <input type="number" name="quantity" step="1" min="1" placeholder="15" required>
-                </label>
-                <button type="submit">Record usage</button>
+                <label>Quantity issued<input type="number" name="quantity" step="1" min="1" required></label>
+                <button type="submit">Deduct from inventory</button>
             </form>
         </article>
 
         <article class="table-card">
-            <h2>Seeded examples</h2>
+            <h2>Issued records</h2>
             <table>
                 <thead>
-                <tr><th>Date</th><th>Item</th><th>Qty</th><th>Context</th></tr>
+                <tr><th>Date</th><th>Item</th><th>Qty</th><th>Status</th><th>Recorded By</th></tr>
                 </thead>
                 <tbody>
-                <tr><td>2026-03-01</td><td>Sugar</td><td>10</td><td>Lunch preparation</td></tr>
-                <tr><td>2026-03-01</td><td>Kales</td><td>5</td><td>Cooking</td></tr>
-                <tr><td>2026-03-02</td><td>Rice</td><td>15</td><td>Lunch service</td></tr>
+                <% if (usageEntries != null && !usageEntries.isEmpty()) { %>
+                    <% for (Usage usage : usageEntries) { %>
+                    <tr>
+                        <td><%= usage.getDate() %></td>
+                        <td><%= usage.getItemName() %></td>
+                        <td><%= usage.getQuantity() %></td>
+                        <td><%= usage.getStatus() %></td>
+                        <td><%= usage.getItemUserName() %></td>
+                    </tr>
+                    <% } %>
+                <% } else { %>
+                    <tr><td colspan="5">No issued items recorded yet.</td></tr>
+                <% } %>
                 </tbody>
             </table>
         </article>

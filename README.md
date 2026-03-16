@@ -1,15 +1,15 @@
 # FoodFlow
 
-FoodFlow is a Jakarta Servlet + MySQL web application for school catering inventory work. The codebase currently contains the backend structure, database scripts, and early web layer for authentication, inventory, supply, usage, damage, reporting, and user management.
+FoodFlow is a Jakarta Servlet + MySQL web application for school catering inventory work. The repo now follows the diagram-defined 3-role system: `ADMIN`, `DEPARTMENT_HEAD`, and `STORE_KEEPER`.
 
 ## Current Status
 
-This repository is in an in-progress backend-first state.
+This repository is in an in-progress full-stack testing state.
 
-- The domain and database design are defined in the repo.
+- The domain and database design are defined in the repo and aligned to the supplied diagrams.
 - Core Java packages exist for config, controllers, DAOs, models, services, and utilities.
 - Servlet routes are primarily mapped with annotations such as `@WebServlet`.
-- The web entrypoint is still minimal, and several controllers/services are placeholders or partial implementations.
+- JSP pages exist for login, dashboards, inventory, requests, reporting, user management, and admin system operations.
 - There are currently no real automated tests in `src/test`.
 
 ## What Exists Today
@@ -22,6 +22,7 @@ This repository is in an in-progress backend-first state.
 - DAO classes under `src/main/java/com/foodflow/dao`
 - Models and enums under `src/main/java/com/foodflow/model`
 - Utility/config classes such as database connection, password handling, and role checks
+- Store request workflow backed by `store_requests` and `request_details`
 
 ### Database
 
@@ -35,7 +36,7 @@ This repository is in an in-progress backend-first state.
 - `web.xml` is present but minimal and currently only sets session timeout.
 - Annotation-based servlet mapping is the primary routing mechanism.
 - `WebConfig.AppFilter` exists in code but is not currently registered, so it is not active.
-- The default web entry page is still a placeholder.
+- The default web entry page now links to the corrected 3-role test flows.
 
 ## Canonical Database Folder
 
@@ -78,14 +79,14 @@ If you are working in NetBeans, some folders are shown with IDE labels instead o
 
 The README uses the real filesystem paths so the structure stays accurate even outside NetBeans.
 
-## Frontend Placeholder Layout
+## Frontend Layout
 
 For this project, browser-facing frontend files should live under `src/main/webapp`, which is the same location NetBeans shows as `Web Pages`.
 
 - `src/main/webapp/index.html`
-  Content here: temporary entry page or landing page
+  Content here: branch landing page and seeded credential hints
 - `src/main/webapp/WEB-INF/`
-  Content here: protected JSP views, `web.xml`, and server-side web configuration
+  Content here: `web.xml` and server-side web configuration
 - `src/main/webapp/assets/css/`
   Content here: frontend stylesheets
 - `src/main/webapp/assets/js/`
@@ -130,8 +131,9 @@ The build produces a WAR and packages the canonical `database/` folder into the 
 ## Implementation Notes
 
 - `DatabaseConfig` currently uses `DriverManager` with hardcoded local connection settings.
-- `SecurityConfig` provides basic role/permission helpers.
-- Some code and docs still reference older naming or planned features, so expect ongoing cleanup.
+- `SecurityConfig` now reflects the role logic from the diagrams.
+- Seed users are `Admin User`, `Department Head`, and `Store Keeper`.
+- Sample passwords are `admin123`, `head123`, and `keeper123`.
 - If you are looking for the actual packaged SQL resources, check the build output under `target/classes/database`.
 
 ## Next Cleanup Targets
