@@ -68,6 +68,33 @@ FoodFlow/
 └── README.md
 ```
 
+## NetBeans Folder Mapping
+
+If you are working in NetBeans, some folders are shown with IDE labels instead of raw filesystem paths.
+
+- `Web Pages` in NetBeans maps to `src/main/webapp`
+- `Source Packages` maps to `src/main/java`
+- Backend resources map to `src/main/resources`
+
+The README uses the real filesystem paths so the structure stays accurate even outside NetBeans.
+
+## Frontend Placeholder Layout
+
+For this project, browser-facing frontend files should live under `src/main/webapp`, which is the same location NetBeans shows as `Web Pages`.
+
+- `src/main/webapp/index.html`
+  Content here: temporary entry page or landing page
+- `src/main/webapp/WEB-INF/`
+  Content here: protected JSP views, `web.xml`, and server-side web configuration
+- `src/main/webapp/assets/css/`
+  Content here: frontend stylesheets
+- `src/main/webapp/assets/js/`
+  Content here: frontend JavaScript
+- `src/main/webapp/assets/images/`
+  Content here: frontend images and icons
+
+`src/main/resources` should stay focused on backend/runtime resources rather than public frontend assets.
+
 ## Tech Stack
 
 - Java 11
