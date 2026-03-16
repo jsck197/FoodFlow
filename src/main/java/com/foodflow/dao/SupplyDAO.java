@@ -134,4 +134,17 @@ public class SupplyDAO {
         supply.setTime(rs.getTime("time").toLocalTime());
         return supply;
     }
+
+    public boolean addSupply(String itemId, int quantity, int userId) {
+        try {
+            Supply supply = new Supply();
+            supply.setItemId(Integer.parseInt(itemId));
+            supply.setQuantity(quantity);
+            supply.setSupplier("USER_" + userId);
+            return addSupply(supply);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
 }

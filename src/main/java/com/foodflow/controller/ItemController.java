@@ -6,7 +6,7 @@ import com.foodflow.config.SecurityConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import jakarta.io.IOException;
+import java.io.IOException;
 
 @WebServlet("/items")
 public class ItemController extends HttpServlet {

@@ -134,4 +134,22 @@ public class DamageDAO {
         damage.setReportedBy(rs.getString("reported_by"));
         return damage;
     }
+
+    public boolean recordDamage(String itemId, int quantity, String reason, int userId) {
+        try {
+            return recordDamage(Integer.parseInt(itemId), quantity, reason, userId);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public boolean recordDamage(int itemId, double quantity, String reason, int userId) {
+        Damage damage = new Damage();
+        damage.setItemId(itemId);
+        damage.setQuantity(quantity);
+        damage.setDescription(reason);
+        damage.setReportedBy(String.valueOf(userId));
+        return addDamage(damage);
+    }
+
 }

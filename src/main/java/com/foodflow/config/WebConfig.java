@@ -14,9 +14,12 @@ public class WebConfig {
      * Apply general servlet settings (call this in servlets or a Filter)
      */
     public static void configureRequest(HttpServletRequest request) {
-        // Ensure request uses UTF-8 encoding
+    try {
         request.setCharacterEncoding("UTF-8");
+    } catch (java.io.UnsupportedEncodingException e) {
+        throw new RuntimeException("UTF-8 encoding not supported", e);
     }
+}
 
     /**
      * Apply general servlet settings to response

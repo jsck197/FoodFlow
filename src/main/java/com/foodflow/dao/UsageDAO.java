@@ -134,4 +134,23 @@ public class UsageDAO {
         usage.setStatus(Usage.Status.valueOf(rs.getString("status")));
         return usage;
     }
+
+
+    public boolean recordUsage(String itemId, int quantity, int userId) {
+        try {
+            return recordUsage(Integer.parseInt(itemId), quantity, userId);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+    }
+
+    public boolean recordUsage(int itemId, double quantity, int userId) {
+        Usage usage = new Usage();
+        usage.setItemId(itemId);
+        usage.setQuantity(quantity);
+        usage.setItemUserName("USER_" + userId);
+        usage.setStatus(Usage.Status.TAKEN);
+        return addUsage(usage);
+    }
+
 }
