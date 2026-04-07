@@ -401,40 +401,48 @@ const ROLES = {
 };
 
 const CREDS = [
-  {email:'storekeeper@foodflow.com', pass:'Storekeeper@1234',  role:'storekeeper',  name:'Storekeeper'},
-  {email:'catering@foodflow.com',pass:'Catering@5678', role:'catering', name:'Catering Manager'},
-  {email:'staff@foodflow.com',   pass:'Staff@9999',    role:'staff',    name:'Staff Member'},
-  
+  {email:'storekeeper@foodflow.com', pass:'Storekeeper@1234', role:'storekeeper', name:'Storekeeper'},
+  {email:'catering@foodflow.com', pass:'Catering@5678', role:'catering', name:'Catering Manager'},
+  {email:'staff@foodflow.com', pass:'Staff@9999', role:'staff', name:'Staff Member'},
 ];
 
-let selectedRole='manager', attempts=0;
+let selectedRole='storekeeper', attempts=0;
 
 function selectRole(btn){
+  if (!btn) return;
   document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  selectedRole=btn.dataset.role;
-  const rd=ROLES[selectedRole];
-  const banner=document.getElementById('roleBanner');
-  banner.className='role-info-banner '+rd.bannerClass;
-  document.getElementById('roleBannerText').textContent=rd.desc;
-  // pre-fill matching email
-  const match=CREDS.find(c=>c.role===selectedRole);
-  if(match){document.getElementById('emailInput').value=match.email;validateEmail();}
+  selectedRole = btn.dataset.role;
+  const rd = ROLES[selectedRole];
+  const banner = document.getElementById('roleBanner');
+  if (banner && rd) {
+    banner.className = 'role-info-banner ' + rd.bannerClass;
+    document.getElementById('roleBannerText').textContent = rd.desc;
+  }
+  const match = CREDS.find(c => c.role === selectedRole);
+  if (match) {
+    document.getElementById('emailInput').value = match.email;
+    validateEmail();
+  }
 }
 
-function fillDemo(email,pass,role){
-  const card=document.getElementById('loginCard');
-  card.style.transition='opacity 0.15s';card.style.opacity='0.7';
-  setTimeout(()=>{
-    document.getElementById('emailInput').value=email;
-    document.getElementById('passInput').value=pass;
-    const btn=document.querySelector(`.role-btn[data-role="${role}"]`);
-    if(btn)selectRole(btn);
-    validateEmail();validatePassword();
-    card.style.opacity='1';
-    const lb=document.getElementById('loginBtn');
-    lb.classList.add('shake-field');setTimeout(()=>lb.classList.remove('shake-field'),400);
-  },150);
+function fillDemo(email, pass, role){
+  const card = document.getElementById('loginCard');
+  card.style.transition = 'opacity 0.15s';
+  card.style.opacity = '0.7';
+  setTimeout(() => {
+    document.getElementById('emailInput').value = email;
+    document.getElementById('passInput').value = pass;
+    selectedRole = role;
+    const btn = document.querySelector(`.role-btn[data-role="${role}"]`);
+    if (btn) selectRole(btn);
+    validateEmail();
+    validatePassword();
+    card.style.opacity = '1';
+    const lb = document.getElementById('loginBtn');
+    lb.classList.add('shake-field');
+    setTimeout(() => lb.classList.remove('shake-field'), 400);
+  }, 150);
 }
 
 function togglePassword(){
