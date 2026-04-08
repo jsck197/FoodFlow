@@ -268,14 +268,7 @@
         </div>
         <div class="access-badge catering">Catering</div>
       </div>
-      <div class="access-card staff">
-        <div class="access-icon green"><i class="fa-solid fa-id-badge"></i></div>
-        <div class="access-info">
-          <div class="access-title">Staff Member</div>
-          <div class="access-desc">View stock, log personal checkouts, report damage</div>
-        </div>
-        <div class="access-badge staff">Limited</div>
-      </div>
+     
       
     </div>
 
@@ -352,7 +345,7 @@
 
       <div class="divider">quick demo access</div>
       <div class="demo-creds">
-        <button class="demo-cred-btn" onclick="fillDemo('storekeeper@foodflow.com','Storekeeper@1234','manager')">
+        <button class="demo-cred-btn" onclick="fillDemo('storekeeper@foodflow.com','Storekeeper@1234','storekeeper')">
           <span class="cred-role mgr"><i class="fa-solid fa-user-shield"></i> Storekeeper</span>
           <span class="cred-val">storekeeper@foodflow.com</span><span class="cred-val">Storekeeper@1234</span>
         </button>
@@ -360,10 +353,7 @@
           <span class="cred-role cat"><i class="fa-solid fa-utensils"></i> Catering Mgr</span>
           <span class="cred-val">catering@foodflow.com</span><span class="cred-val">Catering@5678</span>
         </button>
-        <button class="demo-cred-btn" onclick="fillDemo('staff@foodflow.com','Staff@9999','staff')">
-          <span class="cred-role stf"><i class="fa-solid fa-id-badge"></i> Staff Member</span>
-          <span class="cred-val">staff@foodflow.com</span><span class="cred-val">Staff@9999</span>
-        </button>
+        
        
       </div>
 
@@ -391,19 +381,14 @@ const ROLES = {
     desc:'Perishable goods, kitchen supply tracking, food-related staff checkouts, and expiry date management.',
     redirect:'manager.html',
   },
-  staff: {
-    label:'Staff Member',icon:'fa-id-badge',
-    bannerClass:'rib-staff',
-    desc:'View available stock levels, log your personal item checkouts, and report damaged or broken items.',
-    redirect:'staff.html',
-  },
+ 
  
 };
 
 const CREDS = [
   {email:'storekeeper@foodflow.com', pass:'Storekeeper@1234', role:'storekeeper', name:'Storekeeper'},
   {email:'catering@foodflow.com', pass:'Catering@5678', role:'catering', name:'Catering Manager'},
-  {email:'staff@foodflow.com', pass:'Staff@9999', role:'staff', name:'Staff Member'},
+
 ];
 
 let selectedRole='storekeeper', attempts=0;
@@ -499,8 +484,9 @@ function handleLogin(){
   btn.classList.add('loading');btn.disabled=true;
 
   setTimeout(()=>{
-    const match=CREDS.find(c=>c.email===email&&c.pass===pass&&c.role===selectedRole);
+    const match=CREDS.find(c=>c.email===email&&c.pass===pass);
     if(match){
+      selectedRole=match.role;
       attempts=0;btn.classList.remove('loading');card.classList.add('login-success');
       btn.innerHTML=`<span class="btn-text"><i class="fa-solid fa-circle-check"></i> Access Granted — Loading ${ROLES[match.role].label} workspace…</span>`;
       btn.style.background='linear-gradient(135deg,#064e3b,#10b981)';
@@ -514,16 +500,9 @@ function handleLogin(){
       shakeField('emailGroup');shakeField('passGroup');
       document.getElementById('emailGroup').classList.add('invalid');
       document.getElementById('passGroup').classList.add('invalid');
-      // Smart role mismatch hint
-      const emailRoleMatch=CREDS.find(c=>c.email===email&&c.pass===pass);
-      let msg='';
-      if(emailRoleMatch&&emailRoleMatch.role!==selectedRole){
-        msg=`⚠️ Credentials valid but wrong role — switch to <strong>${ROLES[emailRoleMatch.role].label}</strong>`;
-      } else if(attempts>=3){
-        msg=`❌ ${attempts} failed attempts. <a href="#" onclick="showForgot(event)" style="color:var(--accent-amber)">Reset password?</a>`;
-      } else {
-        msg='❌ Incorrect credentials for the selected role.';
-      }
+      const msg = attempts>=3
+        ? `❌ ${attempts} failed attempts. <a href="#" onclick="showForgot(event)" style="color:var(--accent-amber)">Reset password?</a>`
+        : '❌ Incorrect username or password.';
       showToast(msg,'error');
       document.getElementById('passInput').value='';
       document.getElementById('passInput').focus();
